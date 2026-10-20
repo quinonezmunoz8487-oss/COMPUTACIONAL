@@ -1,0 +1,1779 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PREGUNTAS COMPUTACIONAL DIMENSIÓN YX</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Fira+Code:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Three.js Graphics Engine -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Fira Code', monospace;
+            user-select: none;
+            overflow: hidden;
+            background-color: #020c06;
+            color: #00ff66;
+            touch-action: manipulation;
+        }
+
+        .font-orbitron {
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .glass-panel-green {
+            background: rgba(3, 20, 10, 0.92);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(0, 255, 102, 0.35);
+            box-shadow: 0 8px 32px 0 rgba(0, 255, 102, 0.2), inset 0 0 15px rgba(0, 255, 102, 0.08);
+        }
+
+        .glass-card-green {
+            background: rgba(4, 30, 15, 0.80);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(0, 255, 102, 0.25);
+            transition: all 0.25s ease-out;
+        }
+
+        .glass-card-green:hover {
+            border-color: rgba(0, 255, 102, 0.85);
+            background: rgba(6, 45, 22, 0.9);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 255, 102, 0.4);
+        }
+
+        .neon-text-green {
+            text-shadow: 0 0 10px rgba(0, 255, 102, 0.8), 0 0 20px rgba(0, 255, 102, 0.5), 0 0 30px rgba(0, 255, 102, 0.3);
+        }
+
+        #game-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .interactive-ui {
+            pointer-events: auto;
+        }
+
+        .scanline-overlay {
+            background: linear-gradient(
+                rgba(18, 16, 16, 0) 50%, 
+                rgba(0, 255, 102, 0.03) 50%
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+        }
+
+        @keyframes pulseGreen {
+            0%, 100% { filter: drop-shadow(0 0 12px rgba(0, 255, 102, 0.7)); }
+            50% { filter: drop-shadow(0 0 28px rgba(0, 255, 180, 0.95)); }
+        }
+
+        .pulse-green {
+            animation: pulseGreen 2.5s infinite ease-in-out;
+        }
+
+        .touch-btn {
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        .touch-btn:active {
+            background-color: rgba(0, 255, 102, 0.4) !important;
+            transform: scale(0.92);
+        }
+
+        @keyframes timerBar {
+            from { width: 100%; }
+            to { width: 0%; }
+        }
+
+        .timer-progress-bar {
+            transition: width 1s linear;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #020c06;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #00ff66;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body class="bg-emerald-950 text-emerald-400 select-none overflow-hidden">
+
+    <!-- 3D Canvas rendering Matrix world -->
+    <canvas id="game-canvas"></canvas>
+
+    <!-- CRT Scanline overlay -->
+    <div id="scanline" class="scanline-overlay fixed inset-0 z-5 pointer-events-none"></div>
+
+    <!-- UI Overlay Layer -->
+    <div id="ui-layer" class="relative flex flex-col justify-between p-3 md:p-6 h-screen w-screen overflow-hidden z-30">
+
+        <!-- MAIN MENU -->
+        <div id="main-menu" class="interactive-ui absolute inset-0 flex flex-col items-center justify-center z-30 p-4 bg-black/85 backdrop-blur-md">
+            <div class="text-center mb-6 pulse-green">
+                <span class="inline-block px-4 py-1.5 text-xs font-orbitron tracking-widest text-emerald-300 bg-emerald-950/80 rounded-full border border-emerald-500/50 mb-3">
+                    <i class="fa-solid fa-gamepad mr-2"></i> 200 DIMENSIONES DE DIFICULTAD ESCALABLE Y EXTREMA
+                </span>
+                <h1 class="text-3xl sm:text-5xl md:text-6xl font-black font-orbitron tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-green-300 to-teal-400 neon-text-green uppercase">
+                    PREGUNTAS COMPUTACIONAL
+                </h1>
+                <p class="text-xl md:text-2xl font-orbitron text-emerald-400 tracking-widest mt-2">
+                    DIMENSIÓN YX (1 - 200)
+                </p>
+            </div>
+
+            <div class="flex flex-col gap-3.5 w-full max-w-md">
+                <button id="btn-play" class="interactive-ui group relative flex items-center justify-center gap-3 py-4 px-6 bg-gradient-to-r from-emerald-600 via-green-500 to-teal-600 hover:from-emerald-500 hover:to-teal-500 rounded-2xl font-orbitron font-bold text-lg text-black shadow-lg shadow-emerald-500/30 transition-all duration-300 transform hover:-translate-y-1">
+                    <i class="fa-solid fa-person-running text-xl transition-transform group-hover:scale-125"></i>
+                    <span>CORRER Y SALTAR</span>
+                </button>
+
+                <button id="btn-characters" class="interactive-ui flex items-center justify-center gap-3 py-3.5 px-6 glass-card-green rounded-2xl font-orbitron font-semibold text-emerald-300 hover:text-white transition-all">
+                    <i class="fa-solid fa-user-gear text-lg text-emerald-400"></i>
+                    <span>SELECCIONAR CYBER-AVATAR</span>
+                </button>
+
+                <button id="btn-levels" class="interactive-ui flex items-center justify-center gap-3 py-3.5 px-6 glass-card-green rounded-2xl font-orbitron font-semibold text-emerald-300 hover:text-white transition-all">
+                    <i class="fa-solid fa-cubes text-lg text-teal-400"></i>
+                    <span>MAPA DE DIMENSIONES YX</span>
+                </button>
+
+                <div class="grid grid-cols-2 gap-3 mt-1">
+                    <button id="btn-settings" class="interactive-ui flex items-center justify-center gap-2 py-3 px-4 glass-card-green rounded-2xl font-orbitron text-sm text-emerald-300 hover:text-white">
+                        <i class="fa-solid fa-sliders text-emerald-400"></i>
+                        <span>AJUSTES</span>
+                    </button>
+                    <button id="btn-story" class="interactive-ui flex items-center justify-center gap-2 py-3 px-4 glass-card-green rounded-2xl font-orbitron text-sm text-emerald-300 hover:text-white">
+                        <i class="fa-solid fa-circle-info text-teal-400"></i>
+                        <span>INSTRUCCIONES</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="mt-8 text-xs font-orbitron text-emerald-500/80 flex items-center gap-2">
+                <i class="fa-solid fa-keyboard text-emerald-400"></i>
+                <span>CONTROLES: [W,A,S,D / FLECHAS] MOVER | [ESPACIO] SALTAR OBSTÁCULOS</span>
+            </div>
+        </div>
+
+        <!-- HUD IN-GAME INTERFACE -->
+        <div id="hud-interface" class="hidden w-full h-full flex flex-col justify-between pointer-events-none">
+            <!-- Top Bar -->
+            <div class="flex justify-between items-start w-full gap-2 md:gap-4">
+                <!-- Avatar Status Box -->
+                <div class="interactive-ui glass-panel-green p-3 md:p-4 rounded-2xl flex flex-col gap-1.5 min-w-[160px] md:min-w-[200px] border-l-4 border-l-emerald-400">
+                    <div class="flex items-center justify-between text-xs font-orbitron font-bold text-emerald-300">
+                        <span id="hud-char-name">CYBER-HACKER</span>
+                        <span id="hud-score">0 PTS</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-full h-2 bg-black/80 rounded-full overflow-hidden border border-emerald-900">
+                            <div id="hud-energy-bar" class="h-full bg-gradient-to-r from-emerald-500 to-teal-300 transition-all duration-300 w-full"></div>
+                        </div>
+                        <span id="hud-energy-num" class="text-[10px] font-orbitron text-emerald-400 font-bold">100%</span>
+                    </div>
+                </div>
+
+                <!-- Dimension Progress -->
+                <div class="interactive-ui glass-panel-green px-4 py-2 md:px-5 md:py-2.5 rounded-2xl flex items-center gap-3 md:gap-5 border-b-2 border-b-emerald-400">
+                    <div class="text-center">
+                        <div class="text-[9px] md:text-[10px] font-orbitron text-emerald-500 uppercase tracking-widest">Dimensión YX</div>
+                        <div id="hud-level-title" class="text-xs md:text-sm font-orbitron font-bold text-emerald-300">NIVEL 1: HARDWARE</div>
+                    </div>
+                    <div class="h-6 w-px bg-emerald-800"></div>
+                    <div class="text-center">
+                        <div class="text-[9px] md:text-[10px] font-orbitron text-emerald-500 uppercase tracking-widest">Obstáculos Superados</div>
+                        <div id="hud-progress" class="text-xs md:text-sm font-orbitron font-bold text-teal-300">0 / 5</div>
+                    </div>
+                </div>
+
+                <!-- Action Controls -->
+                <div class="interactive-ui flex items-center gap-2">
+                    <button id="btn-hud-pause" class="interactive-ui glass-panel-green hover:bg-emerald-900/60 p-3 md:p-3.5 rounded-2xl text-emerald-400 hover:text-white transition-all" title="Pausar">
+                        <i class="fa-solid fa-pause text-base md:text-lg"></i>
+                    </button>
+                    <button id="btn-hud-exit" class="interactive-ui glass-panel-green hover:bg-red-950/70 p-3 md:p-3.5 rounded-2xl text-red-400 hover:text-red-200 transition-all border-red-500/40" title="Salir al Menú">
+                        <i class="fa-solid fa-door-open text-base md:text-lg"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Navigation Prompt / Proximity Banner -->
+            <div id="proximity-banner" class="self-center my-auto transition-all duration-300">
+                <div class="glass-panel-green px-6 py-3 rounded-full border-2 border-emerald-400 flex items-center gap-3 pulse-green text-emerald-200 font-orbitron text-xs md:text-sm font-bold shadow-lg">
+                    <i class="fa-solid fa-bolt text-amber-400 text-lg animate-bounce"></i>
+                    <span id="proximity-text">¡SALTA O ESQUIVA LOS OBSTÁCULOS EN LA PISTA!</span>
+                </div>
+            </div>
+
+            <!-- QUESTION TERMINAL OVERLAY WITH 15-SECOND TIMER -->
+            <div id="question-terminal" class="interactive-ui hidden self-center my-auto w-full max-w-3xl glass-panel-green p-5 md:p-6 rounded-3xl border-2 border-amber-400/90 shadow-2xl transition-all duration-300">
+                
+                <!-- TOP HEADER WITH CATEGORY, ATTEMPTS & 15S TIMER -->
+                <div class="flex flex-wrap items-center justify-between border-b border-emerald-800/80 pb-3 mb-3 gap-2">
+                    <span id="question-category" class="text-xs font-orbitron font-bold text-emerald-400 bg-emerald-950/90 px-3 py-1 rounded-full border border-emerald-600/40 flex items-center gap-1.5">
+                        <i class="fa-solid fa-triangle-exclamation text-amber-400"></i> OBSTÁCULO TACTO
+                    </span>
+
+                    <!-- 15 SECOND TIMER DISPLAY -->
+                    <div class="flex items-center gap-2 bg-amber-950/90 border-2 border-amber-400 px-4 py-1.5 rounded-full font-orbitron font-black text-amber-300 shadow-md animate-pulse">
+                        <i class="fa-solid fa-stopwatch text-base text-amber-400"></i>
+                        <span class="text-xs text-amber-200">TIEMPO:</span>
+                        <span id="question-timer-num" class="text-lg text-amber-300">15s</span>
+                    </div>
+
+                    <!-- Attempts Indicator -->
+                    <div class="flex items-center gap-2 bg-emerald-950/90 border border-emerald-500/50 px-3 py-1 rounded-full text-xs font-orbitron font-bold">
+                        <span class="text-emerald-400">INTENTOS:</span>
+                        <div id="attempts-badges" class="flex gap-1.5 text-amber-400">
+                            <i id="attempt-heart-1" class="fa-solid fa-shield-halved text-emerald-400"></i>
+                            <i id="attempt-heart-2" class="fa-solid fa-shield-halved text-emerald-400"></i>
+                        </div>
+                    </div>
+
+                    <!-- Lifelines -->
+                    <div class="flex items-center gap-2">
+                        <button id="powerup-5050" class="text-xs font-orbitron bg-emerald-950 hover:bg-emerald-800 text-emerald-300 px-2.5 py-1 rounded-lg border border-emerald-600/50 transition-all" title="Descartar 2 respuestas">
+                            <i class="fa-solid fa-filter text-teal-400 mr-1"></i> 50:50 (<span id="count-5050">1</span>)
+                        </button>
+                        <button id="powerup-hint" class="text-xs font-orbitron bg-emerald-950 hover:bg-emerald-800 text-emerald-300 px-2.5 py-1 rounded-lg border border-emerald-600/50 transition-all" title="Obtener pista">
+                            <i class="fa-solid fa-lightbulb text-amber-400 mr-1"></i> Pista (<span id="count-hint">1</span>)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- VISUAL 15s TIMER BAR -->
+                <div class="w-full h-2 bg-emerald-950 rounded-full overflow-hidden border border-amber-500/50 mb-4">
+                    <div id="question-timer-bar" class="h-full bg-gradient-to-r from-amber-400 via-amber-500 to-red-500 w-full transition-all duration-1000 ease-linear"></div>
+                </div>
+
+                <!-- Attempt Feedback Alert -->
+                <div id="attempt-warning" class="hidden mb-3 p-2.5 bg-amber-950/80 border border-amber-500 rounded-xl text-amber-300 text-xs font-orbitron flex items-center gap-2">
+                    <i class="fa-solid fa-triangle-exclamation text-amber-400 text-base"></i>
+                    <span id="attempt-warning-text">¡Respuesta incorrecta o tiempo agotado! Te queda 1 intento.</span>
+                </div>
+
+                <div class="mb-4">
+                    <h2 id="question-text" class="text-base md:text-lg font-orbitron font-semibold text-white leading-relaxed">
+                        ¿Cargando consulta del obstáculo...?
+                    </h2>
+                    <p id="hint-text" class="hidden text-xs text-amber-300 font-fira bg-amber-950/40 border border-amber-600/40 p-2.5 rounded-xl mt-3">
+                        <!-- Hint text injected here -->
+                    </p>
+                </div>
+
+                <!-- Answer Choices Grid -->
+                <div id="answers-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <!-- Option buttons dynamically generated -->
+                </div>
+            </div>
+
+            <!-- On-screen movement & Jump controls -->
+            <div id="movement-controls" class="interactive-ui flex justify-between items-end w-full pb-2 pt-2">
+                <!-- D-Pad Controls -->
+                <div class="grid grid-cols-3 gap-1.5 w-36 h-36 p-1 bg-black/50 backdrop-blur-md rounded-2xl border border-emerald-500/30">
+                    <div></div>
+                    <button id="ctrl-up" class="touch-btn glass-panel-green rounded-xl flex items-center justify-center text-emerald-300 text-lg font-bold">
+                        <i class="fa-solid fa-chevron-up"></i>
+                    </button>
+                    <div></div>
+                    <button id="ctrl-left" class="touch-btn glass-panel-green rounded-xl flex items-center justify-center text-emerald-300 text-lg font-bold">
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </button>
+                    <div class="flex items-center justify-center text-[9px] font-orbitron text-emerald-500 font-bold">MOVER</div>
+                    <button id="ctrl-right" class="touch-btn glass-panel-green rounded-xl flex items-center justify-center text-emerald-300 text-lg font-bold">
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                    <div></div>
+                    <button id="ctrl-down" class="touch-btn glass-panel-green rounded-xl flex items-center justify-center text-emerald-300 text-lg font-bold">
+                        <i class="fa-solid fa-chevron-down"></i>
+                    </button>
+                    <div></div>
+                </div>
+
+                <!-- Jump Button -->
+                <div class="flex flex-col items-end gap-2">
+                    <button id="btn-jump" class="interactive-ui touch-btn glass-panel-green hover:bg-emerald-500 hover:text-black border-2 border-emerald-400 px-6 py-4 rounded-2xl text-emerald-300 font-orbitron font-black text-sm flex items-center gap-2 shadow-lg shadow-emerald-500/30">
+                        <i class="fa-solid fa-angles-up text-lg"></i>
+                        <span>SALTAR [ESPACIO]</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL: CHARACTER SELECTION -->
+        <div id="modal-characters" class="interactive-ui hidden absolute inset-0 flex flex-col items-center justify-center z-40 p-4 bg-black/85 backdrop-blur-lg">
+            <div class="glass-panel-green p-6 md:p-8 rounded-3xl max-w-4xl w-full flex flex-col gap-6 max-h-[90vh] overflow-y-auto">
+                <div class="flex justify-between items-center border-b border-emerald-800 pb-4">
+                    <div>
+                        <h2 class="text-2xl font-bold font-orbitron text-emerald-400">SELECCIÓN DE CYBER-AVATAR</h2>
+                        <p class="text-xs text-emerald-500 font-orbitron">CADA AVATAR POSEE HABILIDADES ÚNICAS EN LA PISTA</p>
+                    </div>
+                    <button id="btn-close-characters" class="text-emerald-400 hover:text-white text-2xl p-2">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <div id="characters-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Dynamic Character Cards -->
+                </div>
+
+                <div class="flex justify-end gap-3 pt-4 border-t border-emerald-800">
+                    <button id="btn-confirm-character" class="py-3 px-8 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 rounded-xl font-orbitron font-bold text-black shadow-lg shadow-emerald-500/25">
+                        CONFIRMAR SELECCIÓN
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL: DIMENSION MAP -->
+        <div id="modal-levels" class="interactive-ui hidden absolute inset-0 flex flex-col items-center justify-center z-40 p-4 bg-black/85 backdrop-blur-lg">
+            <div class="glass-panel-green p-5 md:p-6 rounded-3xl max-w-4xl w-full flex flex-col gap-4 max-h-[90vh]">
+                <div class="flex justify-between items-center border-b border-emerald-800 pb-3">
+                    <div>
+                        <h2 class="text-xl md:text-2xl font-bold font-orbitron text-emerald-400">MAPA DE 200 DIMENSIONES YX</h2>
+                        <p class="text-xs text-emerald-500 font-orbitron">EXPLORA O SALTA DIRECTAMENTE A CUALQUIER DIMENSIÓN (1 AL 200)</p>
+                    </div>
+                    <button id="btn-close-levels" class="text-emerald-400 hover:text-white text-2xl p-2">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <!-- Jump Control & Ranged Tabs -->
+                <div class="flex flex-wrap items-center justify-between gap-3 bg-emerald-950/80 p-3 rounded-2xl border border-emerald-700/50">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-orbitron text-emerald-300 font-bold">DIMENSIÓN:</span>
+                        <input type="number" id="input-dim-jump" min="1" max="200" value="1" class="w-20 bg-black/90 border border-emerald-500 rounded-xl px-2 py-1 text-center font-orbitron text-emerald-300 text-sm font-bold focus:outline-none focus:border-teal-400">
+                        <button id="btn-dim-go" class="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-black font-orbitron font-bold text-xs rounded-xl shadow-md transition-all">
+                            IR A DIMENSIÓN <i class="fa-solid fa-bolt ml-1"></i>
+                        </button>
+                    </div>
+
+                    <div id="dim-range-tabs" class="flex flex-wrap gap-1 text-[11px] font-orbitron">
+                        <!-- Dynamic Range Selector Buttons -->
+                    </div>
+                </div>
+
+                <div id="levels-container" class="flex flex-col gap-3 overflow-y-auto max-h-[50vh] pr-1">
+                    <!-- Dynamic Levels 1 to 200 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL: SETTINGS -->
+        <div id="modal-settings" class="interactive-ui hidden absolute inset-0 flex flex-col items-center justify-center z-40 p-4 bg-black/85 backdrop-blur-lg">
+            <div class="glass-panel-green p-6 md:p-8 rounded-3xl max-w-md w-full flex flex-col gap-6">
+                <div class="flex justify-between items-center border-b border-emerald-800 pb-4">
+                    <h2 class="text-xl font-bold font-orbitron text-emerald-400 flex items-center gap-2">
+                        <i class="fa-solid fa-sliders"></i> AJUSTES DE MATRIZ
+                    </h2>
+                    <button id="btn-close-settings" class="text-emerald-400 hover:text-white text-xl p-1">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <div class="flex flex-col gap-5">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <div class="text-sm font-semibold text-emerald-200">Efectos de Sonido (SFX)</div>
+                            <div class="text-xs text-emerald-500">Sonidos de salto, choque y temporizador</div>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="setting-sfx" class="sr-only peer" checked>
+                            <div class="w-11 h-6 bg-emerald-950 border border-emerald-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-black after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-emerald-400 after:border-emerald-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                        </label>
+                    </div>
+
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <div class="text-sm font-semibold text-emerald-200">Música de Fondo (BGM)</div>
+                            <div class="text-xs text-emerald-500">Sintetizador Sci-Fi Cyberpunk</div>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="setting-bgm" class="sr-only peer" checked>
+                            <div class="w-11 h-6 bg-emerald-950 border border-emerald-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-black after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-emerald-400 after:border-emerald-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                        </label>
+                    </div>
+
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <div class="text-sm font-semibold text-emerald-200">Efecto Líneas CRT</div>
+                            <div class="text-xs text-emerald-500">Estilo pantalla retro terminal</div>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="setting-scanlines" class="sr-only peer" checked>
+                            <div class="w-11 h-6 bg-emerald-950 border border-emerald-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-black after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-emerald-400 after:border-emerald-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL: INSTRUCTIONS -->
+        <div id="modal-story" class="interactive-ui hidden absolute inset-0 flex flex-col items-center justify-center z-40 p-4 bg-black/85 backdrop-blur-lg">
+            <div class="glass-panel-green p-6 md:p-8 rounded-3xl max-w-2xl w-full flex flex-col gap-5">
+                <div class="flex justify-between items-center border-b border-emerald-800 pb-3">
+                    <h2 class="text-xl font-bold font-orbitron text-emerald-400 flex items-center gap-2">
+                        <i class="fa-solid fa-circle-info"></i> REGLAS DE NAVEGACIÓN Y OBSTÁCULOS
+                    </h2>
+                    <button id="btn-close-story" class="text-emerald-400 hover:text-white text-xl p-1">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    <div class="p-3 bg-emerald-950/60 rounded-xl border border-emerald-800/80">
+                        <div class="font-orbitron text-emerald-300 font-bold mb-1"><i class="fa-solid fa-person-running text-emerald-400 mr-1"></i> 1. Carrera Libre y Salto</div>
+                        <p class="text-emerald-400/80">Usa [W,A,S,D] para moverte y presiona [ESPACIO] o el botón de la pantalla para saltar sobre los obstáculos 3D.</p>
+                    </div>
+                    <div class="p-3 bg-emerald-950/60 rounded-xl border border-emerald-800/80">
+                        <div class="font-orbitron text-emerald-300 font-bold mb-1"><i class="fa-solid fa-triangle-exclamation text-amber-400 mr-1"></i> 2. Activación por Choque</div>
+                        <p class="text-emerald-400/80">Si no logras saltar un obstáculo y lo tocas, el juego se pausará y activará el desafío computacional.</p>
+                    </div>
+                    <div class="p-3 bg-emerald-950/60 rounded-xl border border-emerald-800/80">
+                        <div class="font-orbitron text-emerald-300 font-bold mb-1"><i class="fa-solid fa-stopwatch text-amber-300 mr-1"></i> 3. Temporizador de 15 Segundos</div>
+                        <p class="text-emerald-400/80">Tendrás exactamente 15 segundos para responder. Si se agota el tiempo, perderás 1 intento automáticamente.</p>
+                    </div>
+                    <div class="p-3 bg-emerald-950/60 rounded-xl border border-emerald-800/80">
+                        <div class="font-orbitron text-emerald-300 font-bold mb-1"><i class="fa-solid fa-shield-halved text-emerald-400 mr-1"></i> 4. 2 Intentos por Pregunta</div>
+                        <p class="text-emerald-400/80">Si fallas o se acaba el tiempo, tienes 1 reintento de 15 segundos. Si fallas los 2 intentos, quedas eliminado.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL: PAUSE -->
+        <div id="modal-pause" class="interactive-ui hidden absolute inset-0 flex flex-col items-center justify-center z-50 p-4 bg-black/80 backdrop-blur-md">
+            <div class="glass-panel-green p-8 rounded-3xl max-w-sm w-full flex flex-col items-center text-center gap-5 border border-emerald-400/50">
+                <div class="w-16 h-16 bg-emerald-950 rounded-2xl flex items-center justify-center border border-emerald-400 text-emerald-400 text-2xl">
+                    <i class="fa-solid fa-pause"></i>
+                </div>
+                <h2 class="text-2xl font-bold font-orbitron text-white">SIMULACIÓN PAUSADA</h2>
+
+                <div class="flex flex-col gap-3 w-full mt-2">
+                    <button id="btn-resume" class="py-3.5 px-6 bg-emerald-500 hover:bg-emerald-400 text-black font-orbitron font-bold rounded-2xl shadow-lg transition-all">
+                        CONTINUAR
+                    </button>
+                    <button id="btn-restart-round" class="py-3 px-6 glass-card-green text-emerald-300 font-orbitron font-semibold rounded-2xl hover:text-white">
+                        REINICIAR ETAPA
+                    </button>
+                    <button id="btn-exit-to-menu" class="py-3 px-6 glass-card-green text-red-400 font-orbitron font-semibold rounded-2xl hover:bg-red-950/40 hover:text-red-300">
+                        SALIR AL MENÚ PRINCIPAL
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL: WIN / LEVEL COMPLETE -->
+        <div id="modal-win" class="interactive-ui hidden absolute inset-0 flex flex-col items-center justify-center z-50 p-4 bg-black/85 backdrop-blur-md">
+            <div class="glass-panel-green p-8 rounded-3xl max-w-md w-full flex flex-col items-center text-center gap-5 border border-emerald-400 shadow-emerald-500/30 shadow-2xl">
+                <div class="w-20 h-20 bg-emerald-950 rounded-full flex items-center justify-center border-2 border-emerald-400 text-emerald-400 text-3xl animate-bounce">
+                    <i class="fa-solid fa-trophy"></i>
+                </div>
+                <div>
+                    <h2 class="text-3xl font-black font-orbitron text-emerald-400">¡DIMENSIÓN SUPERADA!</h2>
+                    <p class="text-xs text-emerald-300 font-orbitron mt-1">HAS SUPERADO TODOS LOS OBSTÁCULOS</p>
+                </div>
+
+                <div class="w-full bg-emerald-950/80 p-4 rounded-2xl border border-emerald-800 flex flex-col gap-2 font-orbitron text-sm">
+                    <div class="flex justify-between">
+                        <span class="text-emerald-500">Obstáculos Despejados:</span>
+                        <span id="win-correct" class="text-emerald-300 font-bold">5 / 5</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-emerald-500">Energía Restante:</span>
+                        <span id="win-accuracy" class="text-teal-300 font-bold">100%</span>
+                    </div>
+                    <div class="flex justify-between pt-2 border-t border-emerald-900 text-base">
+                        <span class="text-emerald-200">Puntaje Total:</span>
+                        <span id="win-score" class="text-emerald-400 font-bold">15,000 PTS</span>
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-3 w-full">
+                    <button id="btn-next-level" class="py-4 px-6 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-black font-orbitron font-bold rounded-2xl shadow-lg transition-all">
+                        SIGUIENTE DIMENSIÓN YX
+                    </button>
+                    <button id="btn-win-menu" class="py-3 px-6 glass-card-green text-emerald-300 font-orbitron rounded-2xl hover:text-white">
+                        MENÚ PRINCIPAL
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL: GAME OVER / ELIMINATED -->
+        <div id="modal-gameover" class="interactive-ui hidden absolute inset-0 flex flex-col items-center justify-center z-50 p-4 bg-black/85 backdrop-blur-md">
+            <div class="glass-panel-green p-8 rounded-3xl max-w-md w-full flex flex-col items-center text-center gap-5 border border-red-500/50 shadow-red-500/20 shadow-2xl">
+                <div class="w-20 h-20 bg-red-950/80 rounded-full flex items-center justify-center border-2 border-red-500 text-red-500 text-3xl animate-pulse">
+                    <i class="fa-solid fa-user-xmark"></i>
+                </div>
+                <div>
+                    <h2 class="text-3xl font-black font-orbitron text-red-500">¡JUGADOR ELIMINADO!</h2>
+                    <p id="gameover-reason" class="text-xs text-amber-400 font-orbitron mt-1">TE HAS QUEDADO SIN INTENTOS EN EL OBSTÁCULO</p>
+                </div>
+
+                <div class="flex flex-col gap-3 w-full">
+                    <button id="btn-retry" class="py-4 px-6 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-black font-orbitron font-bold rounded-2xl shadow-lg transition-all">
+                        REINTENTAR SIMULACIÓN
+                    </button>
+                    <button id="btn-gameover-menu" class="py-3 px-6 glass-card-green text-emerald-300 font-orbitron rounded-2xl hover:text-white">
+                        MENÚ PRINCIPAL
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // PROCEDURAL AUDIO SYNTHESIZER
+        class CyberSoundEngine {
+            constructor() {
+                this.ctx = null;
+                this.sfxEnabled = true;
+                this.bgmEnabled = true;
+                this.bgmOsc = null;
+                this.bgmGain = null;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioContext();
+                }
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+
+            playBeep(freq = 800, duration = 0.08, type = 'sine') {
+                if (!this.sfxEnabled || !this.ctx) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                    gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + duration);
+                } catch(e){}
+            }
+
+            playJump() {
+                if (!this.sfxEnabled || !this.ctx) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(250, this.ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(700, this.ctx.currentTime + 0.18);
+                    gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.18);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + 0.18);
+                } catch(e){}
+            }
+
+            playObstacleImpact() {
+                if (!this.sfxEnabled || !this.ctx) return;
+                this.playBeep(180, 0.15, 'sawtooth');
+                setTimeout(() => this.playBeep(120, 0.25, 'square'), 80);
+            }
+
+            playCorrect() {
+                if (!this.sfxEnabled || !this.ctx) return;
+                const notes = [523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((freq, idx) => {
+                    setTimeout(() => this.playBeep(freq, 0.12, 'triangle'), idx * 60);
+                });
+            }
+
+            playWrong() {
+                if (!this.sfxEnabled || !this.ctx) return;
+                this.playBeep(180, 0.25, 'sawtooth');
+                setTimeout(() => this.playBeep(130, 0.35, 'sawtooth'), 120);
+            }
+
+            startBgm() {
+                if (!this.bgmEnabled || !this.ctx) return;
+                if (this.bgmOsc) return;
+                try {
+                    this.bgmOsc = this.ctx.createOscillator();
+                    this.bgmGain = this.ctx.createGain();
+                    this.bgmOsc.type = 'sawtooth';
+                    this.bgmOsc.frequency.setValueAtTime(55, this.ctx.currentTime);
+                    
+                    const filter = this.ctx.createBiquadFilter();
+                    filter.type = 'lowpass';
+                    filter.frequency.setValueAtTime(320, this.ctx.currentTime);
+
+                    this.bgmGain.gain.setValueAtTime(0.03, this.ctx.currentTime);
+
+                    this.bgmOsc.connect(filter);
+                    filter.connect(this.bgmGain);
+                    this.bgmGain.connect(this.ctx.destination);
+                    this.bgmOsc.start();
+                } catch(e){}
+            }
+
+            stopBgm() {
+                if (this.bgmOsc) {
+                    try { this.bgmOsc.stop(); } catch(e){}
+                    this.bgmOsc = null;
+                }
+            }
+        }
+
+        const audio = new CyberSoundEngine();
+    </script>
+
+    <script>
+        const CHARACTERS = [
+            {
+                id: 'hacker',
+                name: 'CYBER-HACKER',
+                role: 'Especialista en Algoritmos',
+                hexColor: '#00ff66',
+                icon: 'fa-user-ninja',
+                desc: 'Inicia con +1 comodín de Pista por dimensión.'
+            },
+            {
+                id: 'ai_agent',
+                name: 'AGENTE-AI',
+                role: 'Sintetizador de Datos',
+                hexColor: '#00ffcc',
+                icon: 'fa-robot',
+                desc: 'Mayor agilidad y altura de salto en la pista.'
+            },
+            {
+                id: 'net_runner',
+                name: 'NET RUNNER',
+                role: 'Navegante de Redes',
+                hexColor: '#39ff14',
+                icon: 'fa-network-wired',
+                desc: 'Otorga +20% de puntaje extra por cada acierto.'
+            },
+            {
+                id: 'quantum',
+                name: 'BYTE CUÁNTICO',
+                role: 'Núcleo de Criptografía',
+                hexColor: '#10b981',
+                icon: 'fa-microchip',
+                desc: 'Inicia con +1 comodín 50:50 adicional.'
+            }
+        ];
+
+        const QUESTION_BANK = [
+            {
+                category: 'HARDWARE & ARQUITECTURA',
+                q: '¿Qué componente de la computadora es considerado el "cerebro" encargado de procesar instrucciones?',
+                options: ['CPU (Unidad Central de Procesamiento)', 'RAM (Memoria de Acceso Aleatorio)', 'GPU (Unidad de Procesamiento Gráfico)', 'HDD (Disco Duro)'],
+                correct: 0,
+                hint: 'Abreviatura de Central Processing Unit.'
+            },
+            {
+                category: 'SISTEMAS OPERATIVOS',
+                q: '¿Cuál de las siguientes memorias es volátil y pierde su información al apagar la computadora?',
+                options: ['Memoria ROM', 'Disco SSD', 'Memoria RAM', 'Memoria Flash'],
+                correct: 2,
+                hint: 'Es la memoria de acceso aleatorio para procesos activos.'
+            },
+            {
+                category: 'SISTEMA NUMÉRICO',
+                q: '¿Cuál es el valor equivalente en sistema decimal del número binario 1010?',
+                options: ['8', '10', '12', '14'],
+                correct: 1,
+                hint: 'Suma de potencias: (1×8) + (0×4) + (1×2) + (0×1).'
+            },
+            {
+                category: 'HARDWARE',
+                q: '¿Qué dispositivo de almacenamiento no posee partes mecánicas móviles y utiliza chips flash?',
+                options: ['Disco Duro HDD', 'Unidad de Estado Sólido (SSD)', 'Disquete Floppy', 'Cinta Magnética'],
+                correct: 1,
+                hint: 'Cuentan con mayor velocidad y sus siglas son SSD.'
+            },
+            {
+                category: 'UNIDADES DE MEDIDA',
+                q: '¿Cuántos Bytes equivalen exactamente a 1 Kilobyte (KB) en estándares binarios de computación?',
+                options: ['1000 Bytes', '1024 Bytes', '512 Bytes', '2048 Bytes'],
+                correct: 1,
+                hint: 'Es la potencia de 2 elevada a 10 (2^10).'
+            },
+            {
+                category: 'ESTRUCTURAS DE DATOS',
+                q: '¿Qué estructura de datos opera bajo el principio LIFO (Last In, First Out)?',
+                options: ['Cola (Queue)', 'Pila (Stack)', 'Lista Enlazada', 'Matriz (Array)'],
+                correct: 1,
+                hint: 'Piensa en una pila de platos: el último en llegar es el primero en salir.'
+            },
+            {
+                category: 'PROGRAMACIÓN',
+                q: '¿Qué lenguaje ejecuta código en navegadores web para dar interactividad dinámica?',
+                options: ['Python', 'C++', 'JavaScript', 'Java'],
+                correct: 2,
+                hint: 'Es el lenguaje estándar web junto con HTML y CSS.'
+            },
+            {
+                category: 'ALGORITMOS',
+                q: '¿Qué complejidad temporal Big-O representa la búsqueda binaria en un arreglo ordenado?',
+                options: ['O(1)', 'O(n)', 'O(n log n)', 'O(log n)'],
+                correct: 3,
+                hint: 'Divide el espacio de búsqueda a la mitad en cada paso.'
+            },
+            {
+                category: 'LÓGICA COMPUTACIONAL',
+                q: '¿Cuál es el resultado de la operación booleana: (VERDADERO AND FALSO) OR VERDADERO?',
+                options: ['VERDADERO', 'FALSO', 'NULL', 'ERROR'],
+                correct: 0,
+                hint: '(V AND F) es FALSO. Luego (FALSO OR VERDADERO) resulta VERDADERO.'
+            },
+            {
+                category: 'REDES',
+                q: '¿Qué protocolo seguro se utiliza para la transferencia cifrada de páginas web en Internet?',
+                options: ['HTTP', 'HTTPS', 'FTP', 'SMTP'],
+                correct: 1,
+                hint: 'Incluye la S de Secure (SSL/TLS).'
+            },
+            {
+                category: 'CIBERSEGURIDAD',
+                q: '¿Cómo se denomina al malware que cifra tus archivos exigiendo un pago para su rescate?',
+                options: ['Spyware', 'Ransomware', 'Adware', 'Rootkit'],
+                correct: 1,
+                hint: 'Proviene del término en inglés "Ransom" (Rescate).'
+            },
+            {
+                category: 'BASES DE DATOS',
+                q: '¿Qué lenguaje estándar se utiliza para gestionar y consultar bases de datos relacionales?',
+                options: ['SQL', 'HTML', 'JSON', 'XML'],
+                correct: 0,
+                hint: 'Structured Query Language.'
+            },
+            {
+                category: 'INTELIGENCIA ARTIFICIAL',
+                q: '¿Qué prueba evalúa si una máquina exhibe un comportamiento inteligente indistinguible del humano?',
+                options: ['Prueba de Turing', 'Test de Voight-Kampff', 'Algoritmo A*', 'Teorema de Bayes'],
+                correct: 0,
+                hint: 'Diseñada por el matemático Alan Turing.'
+            },
+            {
+                category: 'COMPUTACIÓN CUÁNTICA',
+                q: '¿Cómo se llama la unidad básica de información cuántica que puede estar en superposición?',
+                options: ['Bit', 'Qubit', 'Byte', 'Kernel'],
+                correct: 1,
+                hint: 'Quantum Bit.'
+            },
+            {
+                category: 'REDES & SEGURIDAD',
+                q: '¿En qué capa del modelo OSI opera el enrutamiento IP?',
+                options: ['Capa de Aplicación', 'Capa de Red (Network Layer)', 'Capa de Enlace', 'Capa Física'],
+                correct: 1,
+                hint: 'Es la tercera capa del modelo OSI.'
+            },
+            {
+                category: 'COMPILADORES',
+                q: '¿Qué fase del compilador transforma el código en Tokens?',
+                options: ['Análisis Sintáctico', 'Análisis Léxico', 'Análisis Semántico', 'Optimizador'],
+                correct: 1,
+                hint: 'Realizada por el Lexer o analizador léxico.'
+            },
+            {
+                category: 'CRIPTOGRAFÍA',
+                q: '¿Qué algoritmo de cifrado asimétrico utiliza llaves públicas y privadas?',
+                options: ['AES', 'DES', 'RSA', 'MD5'],
+                correct: 2,
+                hint: 'Iniciales de Rivest, Shamir y Adleman.'
+            },
+            {
+                category: 'ESTRUCTURAS DE DATOS',
+                q: '¿Qué estructura de datos permite el acceso directo O(1) mediante clave-valor?',
+                options: ['Tabla Hash (Hash Map)', 'Lista Doblemente Enlazada', 'Grafo No Dirigido', 'Árbol Binario'],
+                correct: 0,
+                hint: 'Utiliza una función Hash para calcular la posición.'
+            }
+        ];
+
+        function getDimensionData(dimNum) {
+            const clamped = Math.max(1, Math.min(200, dimNum));
+            const colors = ['#00ff66', '#00ffcc', '#39ff14', '#00e5ff', '#a855f7', '#ec4899', '#f59e0b', '#ef4444', '#10b981', '#6366f1'];
+            const themeColor = colors[(clamped - 1) % colors.length];
+
+            // Obstacle count scales from 5 to 10
+            const obstacleCount = Math.min(10, 5 + Math.floor((clamped - 1) / 30));
+
+            // Timer reduces from 15s at level 1 down to 6s at level 200
+            const timerSeconds = Math.max(6, 15 - Math.floor((clamped - 1) / 20));
+
+            // Speed multiplier: 1.0 -> 2.2
+            const speedMultiplier = 1.0 + (clamped / 200) * 1.2;
+
+            // Track width narrows: 7.0m -> 3.2m
+            const platformWidth = Math.max(3.2, 7.0 - (clamped / 200) * 3.8);
+
+            // Obstacles oscillate side-to-side starting from Dim 5
+            const hasMovingObstacles = clamped >= 5;
+            const obstacleSpeed = 1.0 + (clamped / 200) * 3.2;
+
+            // Generate level questions
+            const questions = [];
+            for (let i = 0; i < obstacleCount; i++) {
+                const idx = ((clamped - 1) * 3 + i) % QUESTION_BANK.length;
+                questions.push(QUESTION_BANK[idx]);
+            }
+
+            let diffLabel = 'FÁCIL';
+            if (clamped > 160) diffLabel = 'INFIERNO CUÁNTICO 200';
+            else if (clamped > 120) diffLabel = 'ULTRA EXTREMO';
+            else if (clamped > 80) diffLabel = 'EXTREMO';
+            else if (clamped > 40) diffLabel = 'DIFÍCIL';
+            else if (clamped > 15) diffLabel = 'INTERMEDIO';
+
+            return {
+                id: clamped,
+                title: `Dimensión YX #${clamped}`,
+                diffLabel: diffLabel,
+                color: themeColor,
+                questions: questions,
+                timerSeconds: timerSeconds,
+                speedMultiplier: speedMultiplier,
+                platformWidth: platformWidth,
+                hasMovingObstacles: hasMovingObstacles,
+                obstacleSpeed: obstacleSpeed,
+                desc: `${obstacleCount} Obstáculos | Tiempo: ${timerSeconds}s | Pista: ${platformWidth.toFixed(1)}m | Dificultad: ${diffLabel}`
+            };
+        }
+    </script>
+
+    <script>
+        let scene, camera, renderer;
+        let selectedCharacter = CHARACTERS[0];
+        let currentLevelIndex = 0;
+
+        let gameActive = false;
+        let isPaused = false;
+        let isTerminalOpen = false;
+
+        let score = 0;
+        let energy = 100;
+        let obstaclesClearedCount = 0;
+
+        // 2 ATTEMPTS RULE
+        let attemptsLeft = 2;
+
+        // 15 SECOND TIMER STATE
+        let questionTimerSeconds = 15;
+        let questionTimerInterval = null;
+
+        let lifelines = { count5050: 1, countHint: 1 };
+
+        // 3D Objects & Physics
+        let playerGroup, playerAnimParts = {};
+        let floatingPlatforms = [];
+        let matrixParticles = [];
+        let obstacles3D = [];
+        let portalGate = null;
+
+        // Player Jump Physics State
+        let playerPosY = 0.3;
+        let playerVelY = 0;
+        let isGrounded = true;
+        const GRAVITY = -22.0;
+        const JUMP_FORCE = 8.5;
+
+        // Control Inputs State
+        const moveInput = { up: false, down: false, left: false, right: false, jump: false };
+        const MOVE_SPEED = 8.5;
+
+        function init3DEngine() {
+            const canvas = document.getElementById('game-canvas');
+            renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x020c06);
+            scene.fog = new THREE.FogExp2(0x020c06, 0.022);
+
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 5.0, 9.0);
+
+            // Lighting
+            const ambient = new THREE.AmbientLight(0x00ff66, 0.7);
+            scene.add(ambient);
+
+            const dirLight = new THREE.DirectionalLight(0x00ffcc, 1.3);
+            dirLight.position.set(10, 20, 10);
+            scene.add(dirLight);
+
+            createMatrixParticleRain();
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        function createMatrixParticleRain() {
+            const particleCount = 650;
+            const geo = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+
+            for (let i = 0; i < particleCount * 3; i += 3) {
+                positions[i] = (Math.random() - 0.5) * 60;
+                positions[i + 1] = Math.random() * 40 - 10;
+                positions[i + 2] = (Math.random() - 0.5) * 120;
+            }
+
+            geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            const mat = new THREE.PointsMaterial({
+                color: 0x00ff66,
+                size: 0.35,
+                transparent: true,
+                opacity: 0.75
+            });
+
+            const points = new THREE.Points(geo, mat);
+            scene.add(points);
+            matrixParticles.push(points);
+        }
+
+        function createCyberAvatar(charDef) {
+            const root = new THREE.Group();
+            playerAnimParts = {};
+
+            const bodyMat = new THREE.MeshStandardMaterial({ color: 0x052e16, roughness: 0.3, metalness: 0.8 });
+            const glowMat = new THREE.MeshBasicMaterial({ color: charDef.hexColor });
+            const skinMat = new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.5 });
+
+            // Torso
+            const torsoGeo = new THREE.BoxGeometry(0.6, 0.8, 0.35);
+            const torso = new THREE.Mesh(torsoGeo, bodyMat);
+            torso.position.y = 1.0;
+            root.add(torso);
+            playerAnimParts.torso = torso;
+
+            // Chest glowing core
+            const coreGeo = new THREE.OctahedronGeometry(0.18);
+            const core = new THREE.Mesh(coreGeo, glowMat);
+            core.position.set(0, 1.1, 0.2);
+            root.add(core);
+
+            // Head
+            const headGeo = new THREE.SphereGeometry(0.24, 16, 16);
+            const head = new THREE.Mesh(headGeo, skinMat);
+            head.position.y = 1.6;
+            root.add(head);
+
+            // Cyber Visor
+            const visorGeo = new THREE.BoxGeometry(0.32, 0.09, 0.15);
+            const visor = new THREE.Mesh(visorGeo, glowMat);
+            visor.position.set(0, 1.62, 0.18);
+            root.add(visor);
+
+            // Limbs
+            const limbGeo = new THREE.CylinderGeometry(0.08, 0.07, 0.6);
+
+            // Arms
+            const leftArm = new THREE.Mesh(limbGeo, bodyMat);
+            leftArm.position.set(-0.4, 0.9, 0);
+            root.add(leftArm);
+            playerAnimParts.leftArm = leftArm;
+
+            const rightArm = new THREE.Mesh(limbGeo, bodyMat);
+            rightArm.position.set(0.4, 0.9, 0);
+            root.add(rightArm);
+            playerAnimParts.rightArm = rightArm;
+
+            // Legs
+            const leftLeg = new THREE.Mesh(limbGeo, bodyMat);
+            leftLeg.position.set(-0.18, 0.3, 0);
+            root.add(leftLeg);
+            playerAnimParts.leftLeg = leftLeg;
+
+            const rightLeg = new THREE.Mesh(limbGeo, bodyMat);
+            rightLeg.position.set(0.18, 0.3, 0);
+            root.add(rightLeg);
+            playerAnimParts.rightLeg = rightLeg;
+
+            return root;
+        }
+
+        function build3DLevelStage(levelObj) {
+            // Clean up old objects
+            floatingPlatforms.forEach(p => scene.remove(p));
+            obstacles3D.forEach(obs => scene.remove(obs.group));
+            if (portalGate) scene.remove(portalGate);
+
+            floatingPlatforms = [];
+            obstacles3D = [];
+
+            const totalQuestions = levelObj.questions.length;
+            const pWidth = levelObj.platformWidth;
+            
+            for (let i = 0; i < totalQuestions; i++) {
+                const zPos = -i * 18 - 8;
+
+                // Track Platform Section with Dynamic Width
+                const platGeo = new THREE.BoxGeometry(pWidth, 0.6, 16);
+                const platMat = new THREE.MeshStandardMaterial({
+                    color: 0x03200f,
+                    roughness: 0.2,
+                    metalness: 0.9
+                });
+                const platform = new THREE.Mesh(platGeo, platMat);
+                platform.position.set(0, 0, zPos);
+                scene.add(platform);
+
+                // Wireframe edges with level theme color
+                const edges = new THREE.EdgesGeometry(platGeo);
+                const lineMat = new THREE.LineBasicMaterial({ color: levelObj.color, linewidth: 2 });
+                const wireframe = new THREE.LineSegments(edges, lineMat);
+                platform.add(wireframe);
+
+                floatingPlatforms.push(platform);
+
+                // DYNAMIC 3D OBSTACLE
+                const obstacleGroup = new THREE.Group();
+                obstacleGroup.position.set(0, 0.3, zPos);
+
+                const type = i % 3;
+
+                let meshPart, glowMat;
+                if (type === 0) {
+                    const barGeo = new THREE.BoxGeometry(pWidth - 0.6, 0.4, 0.4);
+                    glowMat = new THREE.MeshBasicMaterial({ color: 0xff3300 });
+                    meshPart = new THREE.Mesh(barGeo, glowMat);
+                    meshPart.position.y = 0.5;
+                    obstacleGroup.add(meshPart);
+                } else if (type === 1) {
+                    const cubeGeo = new THREE.BoxGeometry(2.2, 1.2, 1.2);
+                    glowMat = new THREE.MeshBasicMaterial({ color: 0xffaa00, wireframe: true });
+                    meshPart = new THREE.Mesh(cubeGeo, glowMat);
+                    meshPart.position.y = 0.6;
+                    obstacleGroup.add(meshPart);
+                } else {
+                    const ringGeo = new THREE.TorusGeometry(1.5, 0.15, 12, 24);
+                    glowMat = new THREE.MeshBasicMaterial({ color: 0xff0055 });
+                    meshPart = new THREE.Mesh(ringGeo, glowMat);
+                    meshPart.position.y = 1.2;
+                    obstacleGroup.add(meshPart);
+                }
+
+                const stripGeo = new THREE.BoxGeometry(pWidth - 0.4, 0.05, 1.8);
+                const stripMat = new THREE.MeshBasicMaterial({ color: 0xffaa00, transparent: true, opacity: 0.4 });
+                const strip = new THREE.Mesh(stripGeo, stripMat);
+                strip.position.y = 0.32;
+                obstacleGroup.add(strip);
+
+                scene.add(obstacleGroup);
+
+                obstacles3D.push({
+                    index: i,
+                    group: obstacleGroup,
+                    mesh: meshPart,
+                    glowMat: glowMat,
+                    type: type,
+                    cleared: false,
+                    triggered: false,
+                    questionIndex: i,
+                    hasMoving: levelObj.hasMovingObstacles,
+                    moveSpeed: levelObj.obstacleSpeed * (1 + (i % 3) * 0.4),
+                    maxMoveX: Math.max(0.8, (pWidth / 2) - 1.0)
+                });
+            }
+
+            // Final Portal Gate at end of track
+            const lastZ = -(totalQuestions) * 18 - 8;
+            portalGate = new THREE.Group();
+            portalGate.position.set(0, 2.5, lastZ);
+
+            const ringGeo = new THREE.TorusGeometry(2.8, 0.3, 16, 32);
+            const ringMat = new THREE.MeshBasicMaterial({ color: levelObj.color });
+            const ring = new THREE.Mesh(ringGeo, ringMat);
+            portalGate.add(ring);
+
+            const innerGeo = new THREE.CircleGeometry(2.5, 32);
+            const innerMat = new THREE.MeshBasicMaterial({ color: 0x00ffcc, transparent: true, opacity: 0.6, side: THREE.DoubleSide });
+            const inner = new THREE.Mesh(innerGeo, innerMat);
+            portalGate.add(inner);
+
+            scene.add(portalGate);
+        }
+
+        function onWindowResize() {
+            if (!camera || !renderer) return;
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+    </script>
+
+    <script>
+        function startSimulation() {
+            audio.init();
+            audio.startBgm();
+
+            currentLevelIndex = 0;
+            score = 0;
+            energy = 100;
+            obstaclesClearedCount = 0;
+            isTerminalOpen = false;
+
+            lifelines.count5050 = 1 + (selectedCharacter.id === 'quantum' ? 1 : 0);
+            lifelines.countHint = 1 + (selectedCharacter.id === 'hacker' ? 1 : 0);
+
+            setupCurrentLevel();
+
+            document.getElementById('main-menu').classList.add('hidden');
+            document.getElementById('modal-pause').classList.add('hidden');
+            document.getElementById('modal-win').classList.add('hidden');
+            document.getElementById('modal-gameover').classList.add('hidden');
+            document.getElementById('question-terminal').classList.add('hidden');
+            document.getElementById('hud-interface').classList.remove('hidden');
+
+            gameActive = true;
+            isPaused = false;
+        }
+
+        function setupCurrentLevel() {
+            const levelData = getDimensionData(currentLevelIndex + 1);
+            build3DLevelStage(levelData);
+
+            if (playerGroup) scene.remove(playerGroup);
+            playerGroup = createCyberAvatar(selectedCharacter);
+            playerPosY = 0.3;
+            playerVelY = 0;
+            isGrounded = true;
+            playerGroup.position.set(0, playerPosY, 2);
+            scene.add(playerGroup);
+
+            obstaclesClearedCount = 0;
+            updateHUD();
+            updateProximityBanner(`DIMENSIÓN ${levelData.id}: ¡SALTA O ESQUIVA LOS OBSTÁCULOS!`);
+        }
+
+        function updateProximityBanner(text) {
+            const banner = document.getElementById('proximity-banner');
+            const textEl = document.getElementById('proximity-text');
+            if (textEl) textEl.innerText = text;
+            if (banner) banner.classList.remove('hidden');
+        }
+
+        // TRIGGER QUESTION TERMINAL WHEN PLAYER TOUCHES AN OBSTACLE
+        function triggerObstacleQuestion(obs) {
+            if (isTerminalOpen || obs.cleared) return;
+
+            isTerminalOpen = true;
+            obs.triggered = true;
+            attemptsLeft = 2;
+
+            audio.playObstacleImpact();
+
+            if (obs.glowMat) obs.glowMat.color.setHex(0xffaa00);
+
+            const levelData = getDimensionData(currentLevelIndex + 1);
+            const qData = levelData.questions[obs.questionIndex];
+
+            document.getElementById('question-category').innerHTML = `
+                <i class="fa-solid fa-triangle-exclamation text-amber-400"></i> DIMENSIÓN #${levelData.id} - OBSTÁCULO ${obs.questionIndex + 1}: ${qData.category}
+            `;
+            document.getElementById('question-text').innerText = `${qData.q}`;
+
+            const hintEl = document.getElementById('hint-text');
+            hintEl.classList.add('hidden');
+            hintEl.innerText = '';
+
+            document.getElementById('attempt-warning').classList.add('hidden');
+            updateAttemptsUI();
+
+            const grid = document.getElementById('answers-grid');
+            grid.innerHTML = '';
+
+            qData.options.forEach((optText, optIdx) => {
+                const btn = document.createElement('button');
+                btn.className = 'answer-btn interactive-ui flex items-center justify-start gap-3 p-3.5 bg-emerald-950/80 hover:bg-emerald-800/90 border border-emerald-600/50 rounded-2xl font-fira text-sm text-emerald-200 hover:text-white transition-all text-left';
+                btn.innerHTML = `
+                    <span class="w-7 h-7 rounded-lg bg-emerald-900 flex items-center justify-center font-orbitron font-bold text-xs text-emerald-300 border border-emerald-500/40">${String.fromCharCode(65 + optIdx)}</span>
+                    <span>${optText}</span>
+                `;
+
+                btn.onclick = () => handleAnswerSubmission(optIdx, obs);
+                grid.appendChild(btn);
+            });
+
+            document.getElementById('question-terminal').classList.remove('hidden');
+            document.getElementById('proximity-banner').classList.add('hidden');
+
+            startQuestionTimer(obs);
+        }
+
+        // TIMER CONTROLLER
+        function startQuestionTimer(obs) {
+            clearInterval(questionTimerInterval);
+            const levelData = getDimensionData(currentLevelIndex + 1);
+            questionTimerSeconds = levelData.timerSeconds;
+            updateTimerDisplay();
+
+            questionTimerInterval = setInterval(() => {
+                if (isPaused) return;
+
+                questionTimerSeconds--;
+                updateTimerDisplay();
+
+                if (questionTimerSeconds <= 3 && questionTimerSeconds > 0) {
+                    audio.playBeep(900, 0.08, 'sine');
+                }
+
+                if (questionTimerSeconds <= 0) {
+                    clearInterval(questionTimerInterval);
+                    handleTimeExpiredPenalty(obs);
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const levelData = getDimensionData(currentLevelIndex + 1);
+            document.getElementById('question-timer-num').innerText = `${questionTimerSeconds}s`;
+            const percent = (questionTimerSeconds / levelData.timerSeconds) * 100;
+            document.getElementById('question-timer-bar').style.width = `${percent}%`;
+        }
+
+        function handleTimeExpiredPenalty(obs) {
+            audio.playWrong();
+            attemptsLeft--;
+            updateAttemptsUI();
+
+            if (attemptsLeft > 0) {
+                // Show warning and reset 15s timer for 2nd attempt
+                const warnBox = document.getElementById('attempt-warning');
+                warnBox.classList.remove('hidden');
+                document.getElementById('attempt-warning-text').innerText = "¡Tiempo agotado! Se restó 1 intento. Tienes 15 segundos adicionales.";
+                startQuestionTimer(obs);
+            } else {
+                // 0 Attempts left -> GAME OVER
+                clearInterval(questionTimerInterval);
+                energy = 0;
+                updateHUD();
+                setTimeout(() => {
+                    isTerminalOpen = false;
+                    gameActive = false;
+                    document.getElementById('question-terminal').classList.add('hidden');
+                    document.getElementById('gameover-reason').innerText = "¡SE AGOTÓ EL TIEMPO Y TUS INTENTOS EN EL OBSTÁCULO!";
+                    document.getElementById('modal-gameover').classList.remove('hidden');
+                }, 600);
+            }
+        }
+
+        function updateAttemptsUI() {
+            const container = document.getElementById('attempts-badges');
+            if (attemptsLeft === 2) {
+                container.innerHTML = `
+                    <i class="fa-solid fa-shield-halved text-emerald-400"></i>
+                    <i class="fa-solid fa-shield-halved text-emerald-400"></i>
+                `;
+            } else if (attemptsLeft === 1) {
+                container.innerHTML = `
+                    <i class="fa-solid fa-shield-halved text-amber-400"></i>
+                    <i class="fa-solid fa-shield-halved text-emerald-900"></i>
+                `;
+            } else {
+                container.innerHTML = `
+                    <i class="fa-solid fa-shield-halved text-red-500"></i>
+                    <i class="fa-solid fa-shield-halved text-red-500"></i>
+                `;
+            }
+        }
+
+        function handleAnswerSubmission(selectedIndex, obs) {
+            const levelData = getDimensionData(currentLevelIndex + 1);
+            const qData = levelData.questions[obs.questionIndex];
+            const buttons = document.querySelectorAll('.answer-btn');
+
+            if (selectedIndex === qData.correct) {
+                // CORRECT ANSWER
+                clearInterval(questionTimerInterval);
+                audio.playCorrect();
+                buttons[selectedIndex].classList.remove('bg-emerald-950/80', 'border-emerald-600/50');
+                buttons[selectedIndex].classList.add('bg-emerald-500', 'text-black', 'border-emerald-300', 'font-bold');
+
+                const multiplier = selectedCharacter.id === 'net_runner' ? 1.2 : 1.0;
+                score += Math.round((1000 + currentLevelIndex * 50) * multiplier);
+                obstaclesClearedCount++;
+                updateHUD();
+
+                obs.cleared = true;
+                if (obs.glowMat) obs.glowMat.color.setHex(0x00ffcc);
+                obs.group.position.y = -10;
+
+                setTimeout(() => {
+                    isTerminalOpen = false;
+                    document.getElementById('question-terminal').classList.add('hidden');
+                    document.getElementById('proximity-banner').classList.remove('hidden');
+
+                    updateProximityBanner(`¡OBSTÁCULO DESPEJADO! CONTINÚA EN DIMENSIÓN ${levelData.id}`);
+                }, 800);
+
+            } else {
+                audio.playWrong();
+                attemptsLeft--;
+                updateAttemptsUI();
+
+                buttons[selectedIndex].classList.add('bg-red-950/80', 'border-red-500', 'text-red-400', 'line-through');
+                buttons[selectedIndex].disabled = true;
+
+                if (attemptsLeft > 0) {
+                    const warnBox = document.getElementById('attempt-warning');
+                    warnBox.classList.remove('hidden');
+                    document.getElementById('attempt-warning-text').innerText = `¡Respuesta incorrecta! Te queda 1 intento. Tienes ${questionTimerSeconds}s restantes.`;
+                } else {
+                    clearInterval(questionTimerInterval);
+                    energy = 0;
+                    updateHUD();
+                    setTimeout(() => {
+                        isTerminalOpen = false;
+                        gameActive = false;
+                        document.getElementById('question-terminal').classList.add('hidden');
+                        document.getElementById('gameover-reason').innerText = "HAS FALLADO LOS 2 INTENTOS DISPONIBLES EN EL OBSTÁCULO";
+                        document.getElementById('modal-gameover').classList.remove('hidden');
+                    }, 800);
+                }
+            }
+        }
+
+        function updateHUD() {
+            document.getElementById('hud-char-name').innerText = selectedCharacter.name;
+            document.getElementById('hud-score').innerText = `${score.toLocaleString()} PTS`;
+            document.getElementById('hud-energy-bar').style.width = `${energy}%`;
+            document.getElementById('hud-energy-num').innerText = `${energy}%`;
+
+            const levelData = getDimensionData(currentLevelIndex + 1);
+            document.getElementById('hud-level-title').innerText = `${levelData.title.toUpperCase()} [${levelData.diffLabel}]`;
+            document.getElementById('hud-progress').innerText = `${obstaclesClearedCount} / ${levelData.questions.length}`;
+
+            document.getElementById('count-5050').innerText = lifelines.count5050;
+            document.getElementById('count-hint').innerText = lifelines.countHint;
+        }
+
+        function triggerWinLevel() {
+            gameActive = false;
+            clearInterval(questionTimerInterval);
+            const levelData = getDimensionData(currentLevelIndex + 1);
+            document.getElementById('win-correct').innerText = `${obstaclesClearedCount} / ${levelData.questions.length}`;
+            document.getElementById('win-accuracy').innerText = `${Math.round((energy / 100) * 100)}%`;
+            document.getElementById('win-score').innerText = `${score.toLocaleString()} PTS`;
+
+            document.getElementById('modal-win').classList.remove('hidden');
+        }
+
+        function use5050Powerup() {
+            if (lifelines.count5050 <= 0 || !isTerminalOpen || !gameActive || isPaused) return;
+            const currentObs = obstacles3D.find(o => o.triggered && !o.cleared);
+            if (!currentObs) return;
+
+            const levelData = getDimensionData(currentLevelIndex + 1);
+            const qData = levelData.questions[currentObs.questionIndex];
+            const buttons = document.querySelectorAll('.answer-btn');
+
+            let removed = 0;
+            buttons.forEach((btn, idx) => {
+                if (idx !== qData.correct && removed < 2 && !btn.disabled) {
+                    btn.style.opacity = '0.2';
+                    btn.disabled = true;
+                    removed++;
+                }
+            });
+
+            lifelines.count5050--;
+            audio.playBeep(900, 0.1, 'sine');
+            updateHUD();
+        }
+
+        function useHintPowerup() {
+            if (lifelines.countHint <= 0 || !isTerminalOpen || !gameActive || isPaused) return;
+            const currentObs = obstacles3D.find(o => o.triggered && !o.cleared);
+            if (!currentObs) return;
+
+            const levelData = getDimensionData(currentLevelIndex + 1);
+            const qData = levelData.questions[currentObs.questionIndex];
+            const hintEl = document.getElementById('hint-text');
+            hintEl.innerText = `💡 PISTA DE DATOS: ${qData.hint}`;
+            hintEl.classList.remove('hidden');
+
+            lifelines.countHint--;
+            audio.playBeep(1100, 0.12, 'triangle');
+            updateHUD();
+        }
+
+        let clock = new THREE.Clock();
+
+        function animate3D() {
+            requestAnimationFrame(animate3D);
+            const delta = clock.getDelta();
+
+            if (gameActive && !isPaused && playerGroup && !isTerminalOpen) {
+                const levelData = getDimensionData(currentLevelIndex + 1);
+
+                // 1. JUMP PHYSICS CALCULATION
+                if (moveInput.jump && isGrounded) {
+                    const jumpBoost = selectedCharacter.id === 'ai_agent' ? 1.15 : 1.0;
+                    playerVelY = JUMP_FORCE * jumpBoost;
+                    isGrounded = false;
+                    audio.playJump();
+                }
+
+                // Apply Gravity
+                playerVelY += GRAVITY * delta;
+                playerPosY += playerVelY * delta;
+
+                // Floor collision (y = 0.3)
+                if (playerPosY <= 0.3) {
+                    playerPosY = 0.3;
+                    playerVelY = 0;
+                    isGrounded = true;
+                }
+
+                playerGroup.position.y = playerPosY;
+
+                // 2. HORIZONTAL & FORWARD MOVEMENT
+                let dx = 0;
+                let dz = 0;
+
+                if (moveInput.up) dz -= 1;
+                if (moveInput.down) dz += 1;
+                if (moveInput.left) dx -= 1;
+                if (moveInput.right) dx += 1;
+
+                if (dx !== 0 || dz !== 0) {
+                    const len = Math.hypot(dx, dz);
+                    dx /= len;
+                    dz /= len;
+
+                    const speed = MOVE_SPEED * levelData.speedMultiplier * (selectedCharacter.id === 'ai_agent' ? 1.15 : 1.0);
+                    playerGroup.position.x += dx * speed * delta;
+                    playerGroup.position.z += dz * speed * delta;
+
+                    // Bounds on dynamic platform X width
+                    const halfWidth = (levelData.platformWidth / 2) - 0.4;
+                    playerGroup.position.x = Math.max(-halfWidth, Math.min(halfWidth, playerGroup.position.x));
+
+                    const angle = Math.atan2(dx, dz);
+                    playerGroup.rotation.y = angle;
+
+                    const walkCycle = isGrounded ? Math.sin(clock.getElapsedTime() * 12) : 0.8;
+                    if (playerAnimParts.leftLeg) playerAnimParts.leftLeg.rotation.x = walkCycle * 0.5;
+                    if (playerAnimParts.rightLeg) playerAnimParts.rightLeg.rotation.x = -walkCycle * 0.5;
+                } else {
+                    if (playerAnimParts.leftLeg) playerAnimParts.leftLeg.rotation.x = isGrounded ? 0 : 0.5;
+                    if (playerAnimParts.rightLeg) playerAnimParts.rightLeg.rotation.x = isGrounded ? 0 : -0.5;
+                }
+
+                // Smooth camera follow
+                camera.position.z += (playerGroup.position.z + 6.5 - camera.position.z) * 0.08;
+                camera.position.x += (playerGroup.position.x * 0.5 - camera.position.x) * 0.08;
+                camera.position.y += (playerPosY * 0.4 + 5.0 - camera.position.y) * 0.08;
+
+                // 3. OBSTACLE COLLISION DETECTION
+                obstacles3D.forEach(obs => {
+                    if (!obs.cleared && !obs.triggered) {
+                        const obsPos = obs.group.position;
+                        const distXZ = Math.hypot(playerGroup.position.x - obsPos.x, playerGroup.position.z - obsPos.z);
+                        const distY = Math.abs(playerPosY - (obsPos.y + 0.5));
+
+                        if (distXZ < 1.6 && distY < 0.9) {
+                            triggerObstacleQuestion(obs);
+                        }
+                    }
+                });
+
+                // 4. PORTAL REACH CHECK
+                if (portalGate) {
+                    const portalDist = playerGroup.position.distanceTo(portalGate.position);
+                    if (portalDist < 2.5) {
+                        triggerWinLevel();
+                    }
+                }
+            }
+
+            // Animate Moving Obstacles & Rotations
+            obstacles3D.forEach(obs => {
+                if (obs.mesh && !obs.cleared) {
+                    if (obs.hasMoving && gameActive && !isPaused && !isTerminalOpen) {
+                        obs.group.position.x = Math.sin(clock.getElapsedTime() * obs.moveSpeed + obs.index) * obs.maxMoveX;
+                    }
+
+                    if (obs.type === 0) obs.mesh.rotation.y += delta * (2.5 + currentLevelIndex * 0.05);
+                    else if (obs.type === 1) {
+                        obs.mesh.rotation.x += delta * (1.5 + currentLevelIndex * 0.03);
+                        obs.mesh.rotation.z += delta * (1.2 + currentLevelIndex * 0.03);
+                    } else if (obs.type === 2) obs.mesh.rotation.z += delta * (3.0 + currentLevelIndex * 0.06);
+                }
+            });
+
+            if (portalGate) {
+                portalGate.rotation.z += delta * 1.5;
+            }
+
+            matrixParticles.forEach(p => {
+                p.rotation.y += delta * 0.05;
+            });
+
+            renderer.render(scene, camera);
+        }
+    </script>
+
+    <script>
+        window.onload = function() {
+            init3DEngine();
+            renderCharacterSelector();
+            renderLevelSelector();
+            setupEventListeners();
+            setupMovementControls();
+            animate3D();
+        };
+
+        function setupMovementControls() {
+            // Keyboard Listener
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') moveInput.up = true;
+                if (e.key === 's' || e.key === 'S' || e.key === 'ArrowDown') moveInput.down = true;
+                if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') moveInput.left = true;
+                if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') moveInput.right = true;
+                if (e.key === ' ' || e.key === 'Spacebar') moveInput.jump = true;
+            });
+
+            window.addEventListener('keyup', (e) => {
+                if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') moveInput.up = false;
+                if (e.key === 's' || e.key === 'S' || e.key === 'ArrowDown') moveInput.down = false;
+                if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') moveInput.left = false;
+                if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') moveInput.right = false;
+                if (e.key === ' ' || e.key === 'Spacebar') moveInput.jump = false;
+            });
+
+            // On-screen Touch Controls
+            const bindTouchBtn = (id, keyProp) => {
+                const btn = document.getElementById(id);
+                const start = (e) => { e.preventDefault(); moveInput[keyProp] = true; };
+                const end = (e) => { e.preventDefault(); moveInput[keyProp] = false; };
+
+                btn.addEventListener('touchstart', start);
+                btn.addEventListener('touchend', end);
+                btn.addEventListener('mousedown', start);
+                btn.addEventListener('mouseup', end);
+            };
+
+            bindTouchBtn('ctrl-up', 'up');
+            bindTouchBtn('ctrl-down', 'down');
+            bindTouchBtn('ctrl-left', 'left');
+            bindTouchBtn('ctrl-right', 'right');
+            bindTouchBtn('btn-jump', 'jump');
+        }
+
+        function setupEventListeners() {
+            document.getElementById('btn-play').onclick = startSimulation;
+            document.getElementById('btn-characters').onclick = () => showModal('modal-characters');
+            document.getElementById('btn-close-characters').onclick = () => hideModal('modal-characters');
+            document.getElementById('btn-confirm-character').onclick = () => hideModal('modal-characters');
+
+            document.getElementById('btn-levels').onclick = () => showModal('modal-levels');
+            document.getElementById('btn-close-levels').onclick = () => hideModal('modal-levels');
+
+            document.getElementById('btn-settings').onclick = () => showModal('modal-settings');
+            document.getElementById('btn-close-settings').onclick = () => hideModal('modal-settings');
+
+            document.getElementById('btn-story').onclick = () => showModal('modal-story');
+            document.getElementById('btn-close-story').onclick = () => hideModal('modal-story');
+
+            document.getElementById('btn-hud-pause').onclick = togglePause;
+            document.getElementById('btn-hud-exit').onclick = exitToMainMenu;
+
+            document.getElementById('btn-resume').onclick = togglePause;
+            document.getElementById('btn-restart-round').onclick = startSimulation;
+            document.getElementById('btn-exit-to-menu').onclick = exitToMainMenu;
+
+            document.getElementById('btn-retry').onclick = startSimulation;
+            document.getElementById('btn-gameover-menu').onclick = exitToMainMenu;
+
+            document.getElementById('btn-next-level').onclick = () => {
+                currentLevelIndex = Math.min(199, currentLevelIndex + 1);
+                startSimulation();
+            };
+            document.getElementById('btn-win-menu').onclick = exitToMainMenu;
+
+            // Dimension Jump Button
+            document.getElementById('btn-dim-go').onclick = () => {
+                const val = parseInt(document.getElementById('input-dim-jump').value);
+                if (val >= 1 && val <= 200) {
+                    currentLevelIndex = val - 1;
+                    hideModal('modal-levels');
+                    startSimulation();
+                }
+            };
+
+            // Powerups
+            document.getElementById('powerup-5050').onclick = use5050Powerup;
+            document.getElementById('powerup-hint').onclick = useHintPowerup;
+
+            // Settings
+            document.getElementById('setting-sfx').onchange = (e) => audio.sfxEnabled = e.target.checked;
+            document.getElementById('setting-bgm').onchange = (e) => {
+                audio.bgmEnabled = e.target.checked;
+                if (!e.target.checked) audio.stopBgm();
+                else if (gameActive) audio.startBgm();
+            };
+            document.getElementById('setting-scanlines').onchange = (e) => {
+                const scanline = document.getElementById('scanline');
+                if (e.target.checked) scanline.classList.remove('hidden');
+                else scanline.classList.add('hidden');
+            };
+        }
+
+        function togglePause() {
+            if (!gameActive) return;
+            isPaused = !isPaused;
+            if (isPaused) document.getElementById('modal-pause').classList.remove('hidden');
+            else document.getElementById('modal-pause').classList.add('hidden');
+        }
+
+        function exitToMainMenu() {
+            gameActive = false;
+            isPaused = false;
+            isTerminalOpen = false;
+            clearInterval(questionTimerInterval);
+            audio.stopBgm();
+
+            document.getElementById('hud-interface').classList.add('hidden');
+            document.getElementById('modal-pause').classList.add('hidden');
+            document.getElementById('modal-win').classList.add('hidden');
+            document.getElementById('modal-gameover').classList.add('hidden');
+            document.getElementById('main-menu').classList.remove('hidden');
+        }
+
+        function showModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function hideModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        function renderCharacterSelector() {
+            const grid = document.getElementById('characters-grid');
+            grid.innerHTML = '';
+
+            CHARACTERS.forEach(char => {
+                const isSelected = selectedCharacter.id === char.id;
+                const card = document.createElement('div');
+                card.className = `glass-card-green p-4 rounded-2xl cursor-pointer flex flex-col items-center text-center gap-3 border-2 transition-all ${
+                    isSelected ? 'border-emerald-400 bg-emerald-950/90 shadow-emerald-500/30 shadow-lg' : 'border-emerald-900/60'
+                }`;
+
+                card.innerHTML = `
+                    <div class="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl text-emerald-300 shadow-inner" style="background-color: ${char.hexColor}22; border: 1px solid ${char.hexColor}">
+                        <i class="fa-solid ${char.icon}"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-orbitron font-bold text-sm" style="color: ${char.hexColor}">${char.name}</h3>
+                        <p class="text-[10px] text-emerald-400 font-orbitron">${char.role}</p>
+                    </div>
+                    <p class="text-xs text-emerald-300/80">${char.desc}</p>
+                `;
+
+                card.onclick = () => {
+                    selectedCharacter = char;
+                    renderCharacterSelector();
+                };
+
+                grid.appendChild(card);
+            });
+        }
+
+        function renderLevelSelector(activeRangeIndex = 0) {
+            const container = document.getElementById('levels-container');
+            const rangeTabs = document.getElementById('dim-range-tabs');
+            container.innerHTML = '';
+            rangeTabs.innerHTML = '';
+
+            const ranges = [
+                { start: 1, end: 40, label: '1 - 40' },
+                { start: 41, end: 80, label: '41 - 80' },
+                { start: 81, end: 120, label: '81 - 120' },
+                { start: 121, end: 160, label: '121 - 160' },
+                { start: 161, end: 200, label: '161 - 200' }
+            ];
+
+            ranges.forEach((r, idx) => {
+                const tabBtn = document.createElement('button');
+                const isSelected = activeRangeIndex === idx;
+                tabBtn.className = `px-2.5 py-1 rounded-lg border transition-all ${
+                    isSelected ? 'bg-emerald-500 text-black border-emerald-300 font-bold' : 'bg-emerald-950 text-emerald-400 border-emerald-800 hover:bg-emerald-900'
+                }`;
+                tabBtn.innerText = r.label;
+                tabBtn.onclick = () => renderLevelSelector(idx);
+                rangeTabs.appendChild(tabBtn);
+            });
+
+            const currentRange = ranges[activeRangeIndex];
+
+            for (let i = currentRange.start; i <= currentRange.end; i++) {
+                const lvl = getDimensionData(i);
+                const isSelected = currentLevelIndex === (i - 1);
+                const card = document.createElement('div');
+                card.className = `glass-card-green p-3 rounded-2xl cursor-pointer flex items-center justify-between border-2 transition-all ${
+                    isSelected ? 'border-emerald-400 bg-emerald-950/90 shadow-md' : 'border-emerald-900/60'
+                }`;
+
+                card.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-orbitron font-bold text-black shadow" style="background-color: ${lvl.color}">
+                            ${lvl.id}
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h3 class="font-orbitron font-bold text-white text-sm">${lvl.title}</h3>
+                                <span class="text-[9px] font-orbitron px-2 py-0.5 rounded-md bg-black/60 border border-emerald-500/40 text-emerald-300 font-bold">${lvl.diffLabel}</span>
+                            </div>
+                            <p class="text-xs text-emerald-400/80">${lvl.desc}</p>
+                        </div>
+                    </div>
+                    <button class="px-3 py-1 bg-emerald-950 hover:bg-emerald-800 text-emerald-300 rounded-xl border border-emerald-600/50 font-orbitron text-xs">
+                        JUGAR <i class="fa-solid fa-play ml-1"></i>
+                    </button>
+                `;
+
+                card.onclick = () => {
+                    currentLevelIndex = i - 1;
+                    hideModal('modal-levels');
+                    startSimulation();
+                };
+
+                container.appendChild(card);
+            }
+        }
+    </script>
+</body>
+</html>
